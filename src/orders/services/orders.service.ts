@@ -286,24 +286,21 @@ export class OrdersService {
   }
 
   async getAvailableOrders(cleanerId?: string): Promise<Order[]> {
-    const orders = await this.orderModel.find({ status: "PENDING" }).lean();
+    const query: any = { status: "PENDING" };
+    let orders = await this.orderModel.find(query).lean();
 
-    if (!cleanerId) {
-      return orders;
+    if (cleanerId) {
+      orders = orders.filter(async (order) => {
+        const conflict = await this.getCleanerScheduleConflict(
+          cleanerId,
+          order.scheduledDate,
+          order.scheduledTime,
+        );
+        return !conflict;
+      });
     }
 
-    const available: Order[] = [];
-    for (const order of orders) {
-      const conflict = await this.getCleanerScheduleConflict(
-        cleanerId,
-        order.scheduledDate,
-        order.scheduledTime,
-      );
-      if (!conflict) {
-        available.push(order);
-      }
-    }
-    return available;
+    return orders;
   }
 
   async getCleanerScheduleConflict(
