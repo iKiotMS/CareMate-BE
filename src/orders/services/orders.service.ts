@@ -6,6 +6,7 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 import { Order, OrderDocument } from "../schemas/order.schema";
+import { User, UserDocument } from "../../users/schemas/user.schema";
 import {
   CreateOrderDto,
   AssignCleanerDto,
@@ -17,7 +18,40 @@ import {
 export class OrdersService {
   constructor(
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
+
+  private async withUserNames<T extends any>(orders: T[]): Promise<T[]> {
+    const userIds = Array.from(
+      new Set(
+        orders
+          .flatMap((order: any) => [order.customerId, order.cleanerId])
+          .filter(Boolean)
+          .map((id: any) => id.toString()),
+      ),
+    );
+
+    if (userIds.length === 0) return orders;
+
+    const users = await this.userModel
+      .find({ _id: { $in: userIds.map((id) => new Types.ObjectId(id)) } })
+      .select("fullName")
+      .lean();
+    const nameById = new Map(users.map((user: any) => [user._id.toString(), user.fullName]));
+
+    return orders.map((order: any) => ({
+      ...order,
+      customerName: nameById.get(order.customerId?.toString()) ?? null,
+      cleanerName: order.cleanerId
+        ? nameById.get(order.cleanerId.toString()) ?? null
+        : null,
+    }));
+  }
+
+  private async withUserName<T extends any>(order: T): Promise<T> {
+    const [withNames] = await this.withUserNames([order]);
+    return withNames;
+  }
 
   async createOrder(
     customerId: string,
@@ -65,7 +99,7 @@ export class OrdersService {
     if (!order) {
       throw new NotFoundException(`Order ${orderId} not found`);
     }
-    return order;
+    return this.withUserName(order);
   }
 
   async getCustomerOrders(
@@ -76,7 +110,8 @@ export class OrdersService {
     if (status) {
       query.status = status;
     }
-    return this.orderModel.find(query).lean();
+    const orders = await this.orderModel.find(query).lean();
+    return this.withUserNames(orders);
   }
 
   async getAllOrders(filters?: any): Promise<Order[]> {
@@ -92,7 +127,8 @@ export class OrdersService {
         query.scheduledDate.$gte = new Date(filters.startDate);
       if (filters.endDate) query.scheduledDate.$lte = new Date(filters.endDate);
     }
-    return this.orderModel.find(query).lean();
+    const orders = await this.orderModel.find(query).lean();
+    return this.withUserNames(orders);
   }
 
   async assignCleaner(orderId: string, cleanerId: string): Promise<Order> {
