@@ -1,4 +1,4 @@
-import { Injectable, OnApplicationBootstrap } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 import * as bcrypt from "bcryptjs";
@@ -12,15 +12,15 @@ import { SAMPLE_TASKS } from "./sample-tasks";
 import { SAMPLE_DATA } from "./sample-data";
 
 // Maps sample-data string IDs → email/slug lookups
-const CUST_ID_TO_EMAIL: Record<string, string> = {
-  cust_001: "customer1@example.com",
-  cust_002: "customer2@example.com",
-  cust_003: "alice.johnson@example.com",
+const CUST_ID_TO_PHONE: Record<string, string> = {
+  cust_001: "0123456789",
+  cust_002: "0123456788",
+  cust_003: "0123456787",
 };
-const CLEANER_ID_TO_EMAIL: Record<string, string> = {
-  clean_001: "cleaner1@example.com",
-  clean_002: "cleaner2@example.com",
-  clean_003: "cleaner3@example.com",
+const CLEANER_ID_TO_PHONE: Record<string, string> = {
+  clean_001: "0123456786",
+  clean_002: "0123456785",
+  clean_003: "0123456784",
 };
 const TASK_ID_TO_SLUG: Record<string, string> = {
   task_001: "sweep",
@@ -36,7 +36,7 @@ const TASK_ID_TO_SLUG: Record<string, string> = {
 };
 
 @Injectable()
-export class SeederService implements OnApplicationBootstrap {
+export class SeederService {
   constructor(
     @InjectModel(TaskCatalog.name)
     private taskCatalogModel: Model<TaskCatalogDocument>,
@@ -44,7 +44,7 @@ export class SeederService implements OnApplicationBootstrap {
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
   ) {}
 
-  async onApplicationBootstrap() {
+  async seed() {
     const taskSlugMap = await this.seedTasks();
     const userEmailMap = await this.seedUsers();
     await this.seedOrders(userEmailMap, taskSlugMap);
@@ -55,7 +55,9 @@ export class SeederService implements OnApplicationBootstrap {
 
     const existing = await this.taskCatalogModel.find().lean();
     if (existing.length > 0) {
-      console.log(`✅ TaskCatalog already has ${existing.length} tasks, skipping seed`);
+      console.log(
+        `✅ TaskCatalog already has ${existing.length} tasks, skipping seed`,
+      );
       for (const t of existing) {
         slugToId.set(t.slug, t._id as Types.ObjectId);
       }
@@ -75,15 +77,17 @@ export class SeederService implements OnApplicationBootstrap {
   }
 
   private async seedUsers(): Promise<Map<string, Types.ObjectId>> {
-    const emailToId = new Map<string, Types.ObjectId>();
+    const phoneToId = new Map<string, Types.ObjectId>();
 
     const existing = await this.userModel.find().lean();
     if (existing.length > 0) {
-      console.log(`✅ Users already has ${existing.length} records, skipping seed`);
+      console.log(
+        `✅ Users already has ${existing.length} records, skipping seed`,
+      );
       for (const u of existing) {
-        emailToId.set(u.email, u._id as Types.ObjectId);
+        phoneToId.set(u.phone, u._id as Types.ObjectId);
       }
-      return emailToId;
+      return phoneToId;
     }
 
     console.log("🌱 Seeding Users...");
@@ -107,14 +111,14 @@ export class SeederService implements OnApplicationBootstrap {
 
     const inserted = await this.userModel.insertMany(allUsers);
     for (const u of inserted) {
-      emailToId.set(u.email, u._id as Types.ObjectId);
+      phoneToId.set(u.phone, u._id as Types.ObjectId);
     }
     console.log(`✅ Seeded ${inserted.length} users`);
-    return emailToId;
+    return phoneToId;
   }
 
   private async seedOrders(
-    userEmailMap: Map<string, Types.ObjectId>,
+    userPhoneMap: Map<string, Types.ObjectId>,
     taskSlugMap: Map<string, Types.ObjectId>,
   ): Promise<void> {
     const count = await this.orderModel.countDocuments();
@@ -132,8 +136,8 @@ export class SeederService implements OnApplicationBootstrap {
     console.log("🌱 Seeding Orders...");
 
     const ordersToInsert = SAMPLE_DATA.orders.map((o) => {
-      const custEmail = CUST_ID_TO_EMAIL[o.customerId];
-      const cleanerEmail = CLEANER_ID_TO_EMAIL[o.cleanerId ?? ""];
+      const custPhone = CUST_ID_TO_PHONE[o.customerId];
+      const cleanerPhone = CLEANER_ID_TO_PHONE[o.cleanerId ?? ""];
 
       const tasks = o.tasks.map((t) => {
         const slug = TASK_ID_TO_SLUG[t.taskId];
@@ -153,8 +157,10 @@ export class SeederService implements OnApplicationBootstrap {
       const totalAmount = tasks.reduce((sum, t) => sum + t.taskPrice, 0);
 
       return {
-        customerId: userEmailMap.get(custEmail) ?? new Types.ObjectId(),
-        cleanerId: cleanerEmail ? (userEmailMap.get(cleanerEmail) ?? null) : null,
+        customerId: userPhoneMap.get(custPhone) ?? new Types.ObjectId(),
+        cleanerId: cleanerPhone
+          ? (userPhoneMap.get(cleanerPhone) ?? null)
+          : null,
         status: o.status,
         scheduledDate: new Date(o.scheduledDate),
         scheduledTime: o.scheduledTime,
