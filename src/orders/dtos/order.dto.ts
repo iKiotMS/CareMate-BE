@@ -6,19 +6,31 @@ import {
   IsMongoId,
   IsOptional,
   IsNumber,
+  IsNotEmpty,
+  IsEnum,
   Min,
   Max,
-} from "class-validator";
-import { Types } from "mongoose";
+  Matches,
+} from 'class-validator';
+
+export enum PaymentMethod {
+  CASH = 'CASH',
+  BANK_TRANSFER = 'BANK_TRANSFER',
+  E_WALLET = 'E_WALLET',
+}
 
 export class CreateOrderDto {
   @IsDateString()
   scheduledDate!: string;
 
   @IsString()
+  @Matches(/^\d{2}:\d{2} - \d{2}:\d{2}$/, {
+    message: 'scheduledTime must be in format HH:MM - HH:MM',
+  })
   scheduledTime!: string;
 
   @IsString()
+  @IsNotEmpty()
   address!: string;
 
   @IsOptional()
@@ -34,6 +46,9 @@ export class CreateOrderDto {
   @IsArray()
   @IsString({ each: true })
   photosBeforeBooking?: string[];
+
+  @IsEnum(PaymentMethod)
+  paymentMethod!: PaymentMethod;
 }
 
 export class UpdateOrderDto {
@@ -76,6 +91,7 @@ export class SubmitReviewDto {
 }
 
 export class CancelOrderDto {
+  @IsOptional()
   @IsString()
   reason?: string;
 }

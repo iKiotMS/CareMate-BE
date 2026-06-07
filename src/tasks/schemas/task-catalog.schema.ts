@@ -11,6 +11,12 @@ export class TaskCatalog {
   @Prop({ required: true, unique: true })
   slug!: string;
 
+  @Prop({ type: String, default: null })
+  description?: string | null;
+
+  @Prop({ required: true, default: 0 })
+  price!: number;
+
   @Prop({ default: true })
   isActive!: boolean;
 

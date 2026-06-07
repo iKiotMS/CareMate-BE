@@ -11,6 +11,9 @@ export class OrderTask {
   @Prop({ required: true })
   taskName!: string;
 
+  @Prop({ type: Number, default: 0 })
+  taskPrice!: number;
+
   @Prop({ default: false })
   isDone!: boolean;
 
@@ -71,6 +74,29 @@ export class Order {
 
   @Prop({ default: [] })
   photosAfter?: string[];
+
+  @Prop({ type: Number, default: 0 })
+  totalAmount!: number;
+
+  @Prop({
+    type: String,
+    enum: ['CASH', 'BANK_TRANSFER', 'E_WALLET'],
+    default: 'CASH',
+  })
+  paymentMethod!: string;
+
+  @Prop({
+    type: String,
+    enum: ['UNPAID', 'PAID', 'REFUNDED'],
+    default: 'UNPAID',
+  })
+  paymentStatus!: string;
+
+  @Prop({ type: String, default: null })
+  transactionRef?: string | null;
+
+  @Prop({ type: String, default: null })
+  paymentNote?: string | null;
 
   @Prop({ type: Number, default: null })
   rating?: number | null;

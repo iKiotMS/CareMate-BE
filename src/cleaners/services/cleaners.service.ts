@@ -79,4 +79,31 @@ export class CleanersService {
   async applyForOrder(cleanerId: string, orderId: string): Promise<any> {
     return this.ordersService.applyForOrder(orderId, cleanerId);
   }
+
+  async getCleanerDashboard(cleanerId: string): Promise<any> {
+    const [assignedJobs, workHistory] = await Promise.all([
+      this.ordersService.getCleanerAssignedJobs(cleanerId),
+      this.ordersService.getCleanerCompletedOrders(cleanerId),
+    ]);
+
+    const totalCompleted = workHistory.length;
+    const ratings = (workHistory as any[])
+      .filter((o) => o.rating !== null && o.rating !== undefined)
+      .map((o) => o.rating);
+    const averageRating =
+      ratings.length > 0
+        ? parseFloat(
+            (
+              ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length
+            ).toFixed(2),
+          )
+        : 0;
+
+    return {
+      assignedJobs: assignedJobs.length,
+      completedJobs: totalCompleted,
+      averageRating,
+      recentJobs: (assignedJobs as any[]).slice(0, 5),
+    };
+  }
 }

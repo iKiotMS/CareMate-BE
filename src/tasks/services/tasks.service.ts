@@ -3,14 +3,14 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
-} from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from "mongoose";
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
 import {
   TaskCatalog,
   TaskCatalogDocument,
-} from "../schemas/task-catalog.schema";
-import { CreateTaskDto, UpdateTaskDto } from "../dtos/task.dto";
+} from '../schemas/task-catalog.schema';
+import { CreateTaskDto, UpdateTaskDto } from '../dtos/task.dto';
 
 @Injectable()
 export class TasksService {
@@ -31,9 +31,7 @@ export class TasksService {
     const task = await this.taskCatalogModel
       .findById(new Types.ObjectId(taskId))
       .lean();
-    if (!task) {
-      throw new NotFoundException(`Task ${taskId} not found`);
-    }
+    if (!task) throw new NotFoundException(`Task ${taskId} not found`);
     return task;
   }
 
@@ -60,32 +58,28 @@ export class TasksService {
     const task = new this.taskCatalogModel({
       name: createTaskDto.name,
       slug: createTaskDto.slug,
+      description: createTaskDto.description ?? null,
+      price: createTaskDto.price,
       isActive: true,
-      sortOrder: createTaskDto.sortOrder || 0,
+      sortOrder: createTaskDto.sortOrder ?? 0,
     });
 
     return task.save();
   }
 
-  async updateTask(
-    taskId: string,
-    updateTaskDto: UpdateTaskDto,
-  ): Promise<TaskCatalog> {
+  async updateTask(taskId: string, updateTaskDto: UpdateTaskDto): Promise<TaskCatalog> {
     if (!Types.ObjectId.isValid(taskId)) {
       throw new BadRequestException(`Invalid task id: ${taskId}`);
     }
-    const task = await this.taskCatalogModel.findById(
-      new Types.ObjectId(taskId),
-    );
-    if (!task) {
-      throw new NotFoundException(`Task ${taskId} not found`);
-    }
+    const task = await this.taskCatalogModel.findById(new Types.ObjectId(taskId));
+    if (!task) throw new NotFoundException(`Task ${taskId} not found`);
 
     if (updateTaskDto.name !== undefined) task.name = updateTaskDto.name;
-    if (updateTaskDto.isActive !== undefined)
-      task.isActive = updateTaskDto.isActive;
-    if (updateTaskDto.sortOrder !== undefined)
-      task.sortOrder = updateTaskDto.sortOrder;
+    if (updateTaskDto.description !== undefined)
+      (task as any).description = updateTaskDto.description ?? null;
+    if (updateTaskDto.price !== undefined) (task as any).price = updateTaskDto.price;
+    if (updateTaskDto.isActive !== undefined) task.isActive = updateTaskDto.isActive;
+    if (updateTaskDto.sortOrder !== undefined) task.sortOrder = updateTaskDto.sortOrder;
 
     return task.save();
   }
@@ -106,14 +100,31 @@ export class TasksService {
     if (!Types.ObjectId.isValid(taskId)) {
       throw new BadRequestException(`Invalid task id: ${taskId}`);
     }
-    const task = await this.taskCatalogModel.findById(
-      new Types.ObjectId(taskId),
-    );
-    if (!task) {
-      throw new NotFoundException(`Task ${taskId} not found`);
-    }
-
+    const task = await this.taskCatalogModel.findById(new Types.ObjectId(taskId));
+    if (!task) throw new NotFoundException(`Task ${taskId} not found`);
     task.isActive = !task.isActive;
     return task.save();
+  }
+
+  async calculateTotal(taskIds: string[]) {
+    const tasks = await this.taskCatalogModel.find({
+      _id: { $in: taskIds.map((id) => new Types.ObjectId(id)) },
+      isActive: true,
+    });
+
+    if (tasks.length !== taskIds.length)
+      throw new BadRequestException('One or more tasks are invalid or inactive');
+
+    const items = tasks.map((t: any) => ({
+      taskId: t._id.toString(),
+      taskName: t.name,
+      price: t.price ?? 0,
+    }));
+
+    return {
+      tasks: items,
+      totalAmount: items.reduce((sum, t) => sum + t.price, 0),
+      currency: 'VND',
+    };
   }
 }
