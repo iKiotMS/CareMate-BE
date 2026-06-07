@@ -58,19 +58,24 @@ export class OrdersService {
 
     const users = await this.userModel
       .find({ _id: { $in: userIds.map((id) => new Types.ObjectId(id)) } })
-      .select("fullName")
+      .select("fullName phone")
       .lean();
-    const nameById = new Map(
-      (users as any[]).map((user) => [user._id.toString(), user.fullName]),
+    const userById = new Map(
+      (users as any[]).map((user) => [user._id.toString(), user]),
     );
 
-    return orders.map((order: any) => ({
-      ...order,
-      customerName: nameById.get(order.customerId?.toString()) ?? null,
-      cleanerName: order.cleanerId
-        ? (nameById.get(order.cleanerId.toString()) ?? null)
-        : null,
-    }));
+    return orders.map((order: any) => {
+      const customer = userById.get(order.customerId?.toString());
+      const cleaner = order.cleanerId
+        ? userById.get(order.cleanerId.toString())
+        : null;
+      return {
+        ...order,
+        customerName: customer?.fullName ?? null,
+        customerPhone: customer?.phone ?? null,
+        cleanerName: cleaner?.fullName ?? null,
+      };
+    });
   }
 
   private async withUserName<T extends any>(order: T): Promise<T> {

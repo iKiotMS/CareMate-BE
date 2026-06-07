@@ -15,9 +15,9 @@ export class AuthService {
   ) {}
 
   async register(registerDto: any) {
-    const existingUser = await this.usersService.findByEmail(registerDto.email);
+    const existingUser = await this.usersService.findByPhone(registerDto.phone);
     if (existingUser) {
-      throw new BadRequestException("Email already exists");
+      throw new BadRequestException("Số điện thoại đã được đăng ký");
     }
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
@@ -35,7 +35,7 @@ export class AuthService {
   }
 
   async login(loginDto: any) {
-    const user = await this.usersService.findByEmail(loginDto.email);
+    const user = await this.usersService.findByPhone(loginDto.phone);
     if (!user || !user.isActive) {
       throw new UnauthorizedException("Invalid credentials");
     }
@@ -49,7 +49,7 @@ export class AuthService {
     }
 
     const accessToken = this.jwtService.sign(
-      { sub: user._id, role: user.role, email: user.email },
+      { sub: user._id, role: user.role, phone: user.phone },
       { expiresIn: process.env.JWT_ACCESS_EXPIRATION || "15m" },
     );
 
