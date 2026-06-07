@@ -188,7 +188,7 @@ export const SAMPLE_DATA = {
       id: "order_002",
       customerId: "cust_002",
       cleanerId: "clean_002",
-      status: "ASSIGNED",
+      status: "ON_HOLD_PAYMENT",
       scheduledDate: "2026-06-06",
       scheduledTime: "14:00 - 16:00",
       address: "456 Oak Ave, Springfield, IL 62702",

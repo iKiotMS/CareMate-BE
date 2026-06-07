@@ -196,6 +196,8 @@ export class AdminService {
     const yearStart = new Date(now.getFullYear(), 0, 1);
 
     const [
+      totalOrders,
+      totalCompleted,
       totalCustomers,
       totalCleaners,
       todayRevAgg,
@@ -206,6 +208,8 @@ export class AdminService {
       lowRatingAlerts,
       topCleanersRaw,
     ] = await Promise.all([
+      this.orderModel.countDocuments(),
+      this.orderModel.countDocuments({ status: 'COMPLETED' }),
       this.userModel.countDocuments({ role: 'customer' }),
       this.userModel.countDocuments({ role: 'cleaner' }),
       this.orderModel.aggregate([
@@ -243,15 +247,15 @@ export class AdminService {
       ]),
     ]);
 
-    const totalOrders = stats.total;
     const completionRate =
       totalOrders > 0
-        ? parseFloat(((stats.COMPLETED / totalOrders) * 100).toFixed(2))
+        ? parseFloat(((totalCompleted / totalOrders) * 100).toFixed(2))
         : 0;
 
     const ordersByStatus = [
       'PENDING',
-      'ASSIGNED',
+      'ON_HOLD_PAYMENT',
+      'CONFIRMED',
       'ACCEPTED',
       'IN_PROGRESS',
       'REVIEW_PENDING',
@@ -270,6 +274,7 @@ export class AdminService {
       totalCustomers,
       totalCleaners,
       totalOrders,
+      totalCompleted,
       completionRate,
       ordersByStatus,
       topCleaners: topCleanersRaw,

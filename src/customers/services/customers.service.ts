@@ -1,9 +1,6 @@
-import {
-  Injectable,
-  BadRequestException,
-} from '@nestjs/common';
-import { OrdersService } from '../../orders/services/orders.service';
-import { CreateOrderDto, SubmitReviewDto } from '../../orders/dtos/order.dto';
+import { Injectable, BadRequestException } from "@nestjs/common";
+import { OrdersService } from "../../orders/services/orders.service";
+import { CreateOrderDto, SubmitReviewDto } from "../../orders/dtos/order.dto";
 
 @Injectable()
 export class CustomersService {
@@ -23,7 +20,7 @@ export class CustomersService {
   async getOrderDetail(customerId: string, orderId: string): Promise<any> {
     const order = await this.ordersService.getOrderById(orderId);
     if (order.customerId.toString() !== customerId) {
-      throw new BadRequestException('This order does not belong to you');
+      throw new BadRequestException("This order does not belong to you");
     }
     return order;
   }
@@ -35,9 +32,9 @@ export class CustomersService {
   ): Promise<any> {
     const order = await this.ordersService.getOrderById(orderId);
     if (order.customerId.toString() !== customerId) {
-      throw new BadRequestException('This order does not belong to you');
+      throw new BadRequestException("This order does not belong to you");
     }
-    return this.ordersService.cancelOrder(orderId, 'customer', reason);
+    return this.ordersService.cancelOrder(orderId, "customer", reason);
   }
 
   async submitReview(
@@ -51,13 +48,20 @@ export class CustomersService {
   async getCustomerDashboard(customerId: string): Promise<any> {
     const orders = await this.ordersService.getCustomerOrders(customerId);
     const total = orders.length;
-    const pending = orders.filter((o: any) => o.status === 'PENDING').length;
-    const completed = orders.filter((o: any) => o.status === 'COMPLETED').length;
+    const pending = orders.filter((o: any) => o.status === "PENDING").length;
+    const completed = orders.filter(
+      (o: any) => o.status === "COMPLETED",
+    ).length;
     const inProgress = orders.filter((o: any) =>
-      ['ASSIGNED', 'ACCEPTED', 'IN_PROGRESS'].includes(o.status),
+      ["ON_HOLD_PAYMENT", "CONFIRMED", "ACCEPTED", "IN_PROGRESS"].includes(
+        o.status,
+      ),
     ).length;
     const recentOrders = [...orders]
-      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
       .slice(0, 5);
 
     return {
