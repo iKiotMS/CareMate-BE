@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Patch,
-  Delete,
   Param,
   Body,
   UseGuards,
@@ -159,5 +158,33 @@ export class OrdersController {
     @Req() req: any,
   ) {
     return this.ordersService.submitReview(orderId, req.user.sub, reviewDto);
+  }
+
+  @Get(":id/applicants")
+  @Roles("customer", "admin")
+  async getApplicants(@Param("id") orderId: string, @Req() req: any) {
+    return this.ordersService.getOrderApplicants(orderId, req.user.sub, req.user.role);
+  }
+
+  @Post(":id/select-cleaner")
+  @Roles("customer")
+  async selectCleaner(
+    @Param("id") orderId: string,
+    @Body("cleanerId") cleanerId: string,
+    @Req() req: any,
+  ) {
+    return this.ordersService.selectCleaner(orderId, req.user.sub, cleanerId);
+  }
+
+  @Patch(":id/admin-confirm-deposit")
+  @Roles("admin")
+  async adminConfirmDeposit(@Param("id") orderId: string) {
+    return this.ordersService.adminConfirmDeposit(orderId);
+  }
+
+  @Patch(":id/admin-confirm-final-payment")
+  @Roles("admin")
+  async adminConfirmFinalPayment(@Param("id") orderId: string) {
+    return this.ordersService.adminConfirmFinalPayment(orderId);
   }
 }

@@ -19,9 +19,19 @@ import { CleanersService } from "../services/cleaners.service";
 export class CleanersController {
   constructor(private cleanersService: CleanersService) {}
 
+  @Get("dashboard")
+  getCleanerDashboard(@Req() req: any) {
+    return this.cleanersService.getCleanerDashboard(req.user.sub);
+  }
+
   @Get("available-orders")
   async getAvailableOrders(@Req() req: any) {
     return this.cleanersService.getAvailableOrders(req.user.sub);
+  }
+
+  @Get("applied-orders")
+  async getAppliedOrders(@Req() req: any) {
+    return this.cleanersService.getAppliedOrders(req.user.sub);
   }
 
   @Post("available-orders/:orderId/apply")

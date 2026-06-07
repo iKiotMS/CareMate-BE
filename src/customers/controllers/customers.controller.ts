@@ -24,6 +24,12 @@ import {
 export class CustomersController {
   constructor(private customersService: CustomersService) {}
 
+  @Get("dashboard")
+  @Roles("customer")
+  getCustomerDashboard(@Req() req: any) {
+    return this.customersService.getCustomerDashboard(req.user.sub);
+  }
+
   @Post("orders")
   @Roles("customer")
   async createOrder(@Body() createOrderDto: CreateOrderDto, @Req() req: any) {
