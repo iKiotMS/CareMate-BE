@@ -36,22 +36,22 @@ const MONGODB_URI = fixMongoUri(process.env.MONGODB_URI!);
 
 const realAccounts = [
   {
-    email: "admin@caremate.vn",
-    password: "Admin@CareMate2024",
+    email: "admin",
+    password: "Password@123",
     role: "admin",
     fullName: "Nguyễn Minh Quân",
     phone: "0901234567",
   },
   {
-    email: "customer@caremate.vn",
-    password: "Customer@CareMate2024",
+    email: "customer",
+    password: "Password@123",
     role: "customer",
     fullName: "Trần Thị Lan",
     phone: "0912345678",
   },
   {
-    email: "cleaner@caremate.vn",
-    password: "Cleaner@CareMate2024",
+    email: "cleaner",
+    password: "Password@123",
     role: "cleaner",
     fullName: "Lê Văn Hùng",
     phone: "0923456789",

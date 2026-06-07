@@ -9,8 +9,8 @@ let cachedHandler: any;
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.enableCors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
+    origin: process.env.FRONTEND_URL || "*",
+    credentials: process.env.FRONTEND_URL ? true : false,
   });
   app.useGlobalPipes(
     new ValidationPipe({
