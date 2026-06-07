@@ -29,6 +29,20 @@ export class OrderTask {
 
 export const OrderTaskSchema = SchemaFactory.createForClass(OrderTask);
 
+@Schema({ _id: false })
+export class OrderApplicant {
+  @Prop({ type: Types.ObjectId, required: true })
+  cleanerId!: Types.ObjectId;
+
+  @Prop({ type: Date, default: Date.now })
+  appliedAt!: Date;
+
+  @Prop({ type: String, enum: ['PENDING', 'SELECTED', 'REJECTED'], default: 'PENDING' })
+  status!: string;
+}
+
+export const OrderApplicantSchema = SchemaFactory.createForClass(OrderApplicant);
+
 @Schema({ timestamps: true })
 export class Order {
   @Prop({ type: Types.ObjectId, required: true })
@@ -37,14 +51,20 @@ export class Order {
   @Prop({ type: Types.ObjectId, default: null })
   cleanerId?: Types.ObjectId | null;
 
+  // Cleaner selected by customer but deposit not yet paid
+  @Prop({ type: Types.ObjectId, default: null })
+  pendingCleanerId?: Types.ObjectId | null;
+
   @Prop({
     enum: [
       "PENDING",
-      "ASSIGNED",
+      "ON_HOLD_PAYMENT",
+      "CONFIRMED",
       "ACCEPTED",
       "IN_PROGRESS",
       "COMPLETED",
       "REVIEW_PENDING",
+      "PAYMENT_PENDING",
       "CANCELLED",
     ],
     default: "PENDING",
@@ -75,6 +95,12 @@ export class Order {
   @Prop({ default: [] })
   photosAfter?: string[];
 
+  @Prop({ type: [OrderApplicantSchema], default: [] })
+  applicants?: OrderApplicant[];
+
+  @Prop({ type: Date, default: null })
+  depositDeadline?: Date | null;
+
   @Prop({ type: Number, default: 0 })
   totalAmount!: number;
 
@@ -104,7 +130,7 @@ export class Order {
   @Prop({ type: String, default: null })
   review?: string | null;
 
-  @Prop({ type: String, enum: ["customer", "admin"], default: null })
+  @Prop({ type: String, enum: ["customer", "admin", "system"], default: null })
   cancelledBy?: string | null;
 
   @Prop({ type: String, default: null })

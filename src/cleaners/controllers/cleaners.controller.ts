@@ -29,6 +29,11 @@ export class CleanersController {
     return this.cleanersService.getAvailableOrders(req.user.sub);
   }
 
+  @Get("applied-orders")
+  async getAppliedOrders(@Req() req: any) {
+    return this.cleanersService.getAppliedOrders(req.user.sub);
+  }
+
   @Post("available-orders/:orderId/apply")
   async applyForOrder(@Param("orderId") orderId: string, @Req() req: any) {
     return this.cleanersService.applyForOrder(req.user.sub, orderId);

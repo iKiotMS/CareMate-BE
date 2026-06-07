@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -29,6 +30,7 @@ import { RevenueModule } from './revenue/revenue.module';
       process.env.MONGODB_URI || 'mongodb://localhost:27017/cleaning-service',
     ),
     LoggerModule.forRoot(),
+    ScheduleModule.forRoot(),
     AuthModule,
     UsersModule,
     CustomersModule,

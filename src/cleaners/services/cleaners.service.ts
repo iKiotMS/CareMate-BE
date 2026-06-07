@@ -76,6 +76,10 @@ export class CleanersService {
     return this.ordersService.getAvailableOrders(cleanerId);
   }
 
+  async getAppliedOrders(cleanerId: string): Promise<any> {
+    return this.ordersService.getCleanerAppliedOrders(cleanerId);
+  }
+
   async applyForOrder(cleanerId: string, orderId: string): Promise<any> {
     return this.ordersService.applyForOrder(orderId, cleanerId);
   }
