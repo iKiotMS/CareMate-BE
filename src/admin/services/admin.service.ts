@@ -277,4 +277,41 @@ export class AdminService {
       lowRatingAlerts,
     };
   }
+
+  // REVIEWS
+  async listReviews(
+    minRating?: number,
+    maxRating?: number,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<any> {
+    const query: any = { rating: { $ne: null } };
+    if (minRating !== undefined) query.rating.$gte = minRating;
+    if (maxRating !== undefined) query.rating.$lte = maxRating;
+
+    const skip = (page - 1) * limit;
+    const [total, orders] = await Promise.all([
+      this.orderModel.countDocuments(query),
+      this.orderModel
+        .find(query)
+        .sort({ updatedAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('customerId', 'fullName')
+        .populate('cleanerId', 'fullName')
+        .lean(),
+    ]);
+
+    const data = orders.map((o: any) => ({
+      _id: o._id.toString(),
+      orderId: o._id.toString(),
+      customerName: o.customerId?.fullName ?? 'Khách hàng',
+      cleanerName: o.cleanerId?.fullName ?? 'Nhân viên',
+      rating: o.rating,
+      comment: o.review ?? null,
+      createdAt: o.updatedAt,
+    }));
+
+    return { data, total, page, limit };
+  }
 }
