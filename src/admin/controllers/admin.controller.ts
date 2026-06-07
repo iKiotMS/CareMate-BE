@@ -141,6 +141,22 @@ export class AdminController {
     return this.adminService.cancelOrder(id, cancelOrderDto.reason);
   }
 
+  // REVIEWS
+  @Get("reviews")
+  async listReviews(
+    @Query("minRating") minRating?: string,
+    @Query("maxRating") maxRating?: string,
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 20,
+  ) {
+    return this.adminService.listReviews(
+      minRating ? +minRating : undefined,
+      maxRating ? +maxRating : undefined,
+      page,
+      limit,
+    );
+  }
+
   // TASKS
   @Get("tasks")
   async listTasks() {

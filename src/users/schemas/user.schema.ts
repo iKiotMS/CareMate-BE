@@ -5,8 +5,8 @@ export type UserDocument = User & Document;
 
 @Schema({ timestamps: true })
 export class User {
-  @Prop({ required: true, unique: true, lowercase: true })
-  email!: string;
+  @Prop({ sparse: true, unique: true, lowercase: true })
+  email?: string;
 
   @Prop({ required: true })
   passwordHash!: string;
@@ -17,8 +17,8 @@ export class User {
   @Prop({ required: true })
   fullName!: string;
 
-  @Prop()
-  phone?: string;
+  @Prop({ required: true, unique: true })
+  phone!: string;
 
   @Prop({ type: String, default: null })
   avatarUrl?: string | null;

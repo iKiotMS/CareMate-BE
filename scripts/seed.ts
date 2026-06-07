@@ -1,98 +1,104 @@
-import { connect, disconnect, model } from "mongoose";
-import { User, UserSchema } from "../src/users/schemas/user.schema";
+import { connect, disconnect, model, Types } from "mongoose";
+import { UserSchema } from "../src/users/schemas/user.schema";
 import * as bcrypt from "bcryptjs";
+import * as dotenv from "dotenv";
+import { resolve } from "path";
 
-const MONGODB_URI =
-  process.env.MONGODB_URI || "mongodb://localhost:27017/cleaning-service";
+dotenv.config({ path: resolve(__dirname, "../.env") });
 
-const sampleUsers = [
+// The raw URI may contain an unencoded '@' inside the password (e.g. Password@123).
+// MongoDB's URI parser splits at the FIRST '@', so we percent-encode any '@' that
+// appears before the last '@' (i.e. inside the credentials section).
+function fixMongoUri(uri: string): string {
+  // Split scheme off first
+  const schemeEnd = uri.indexOf("://");
+  if (schemeEnd === -1) return uri;
+  const scheme = uri.slice(0, schemeEnd + 3);
+  const rest = uri.slice(schemeEnd + 3);
+
+  // The host starts after the LAST '@'
+  const lastAt = rest.lastIndexOf("@");
+  if (lastAt === -1) return uri;
+
+  const credentials = rest.slice(0, lastAt); // may contain '@' in password
+  const hostAndDb = rest.slice(lastAt + 1);
+
+  // Encode any '@' inside credentials that aren't separating user from password
+  const colonIdx = credentials.indexOf(":");
+  if (colonIdx === -1) return uri;
+  const user = credentials.slice(0, colonIdx);
+  const pass = credentials.slice(colonIdx + 1).replace(/@/g, "%40");
+
+  return `${scheme}${user}:${pass}@${hostAndDb}`;
+}
+
+const MONGODB_URI = fixMongoUri(process.env.MONGODB_URI!);
+
+const realAccounts = [
   {
-    email: "customer1@example.com",
-    passwordHash: "",
-    role: "customer",
-    fullName: "John Doe",
-    phone: "+1234567890",
-    avatarUrl: null,
-    isActive: true,
-  },
-  {
-    email: "customer2@example.com",
-    passwordHash: "",
-    role: "customer",
-    fullName: "Jane Smith",
-    phone: "+1234567891",
-    avatarUrl: null,
-    isActive: true,
-  },
-  {
-    email: "cleaner1@example.com",
-    passwordHash: "",
-    role: "cleaner",
-    fullName: "Mike Johnson",
-    phone: "+1234567892",
-    avatarUrl: null,
-    isActive: true,
-  },
-  {
-    email: "cleaner2@example.com",
-    passwordHash: "",
-    role: "cleaner",
-    fullName: "Sarah Williams",
-    phone: "+1234567893",
-    avatarUrl: null,
-    isActive: true,
-  },
-  {
-    email: "admin@example.com",
-    passwordHash: "",
+    email: "admin",
+    password: "Password@123",
     role: "admin",
-    fullName: "Admin User",
-    phone: "+1234567894",
-    avatarUrl: null,
-    isActive: true,
+    fullName: "Nguyễn Minh Quân",
+    phone: "0901234567",
+  },
+  {
+    email: "customer",
+    password: "Password@123",
+    role: "customer",
+    fullName: "Trần Thị Lan",
+    phone: "0912345678",
+  },
+  {
+    email: "cleaner",
+    password: "Password@123",
+    role: "cleaner",
+    fullName: "Lê Văn Hùng",
+    phone: "0923456789",
   },
 ];
 
-const seedDatabase = async () => {
-  try {
-    console.log("Connecting to MongoDB...");
-    await connect(MONGODB_URI);
-    console.log("✓ Connected to MongoDB");
+const run = async () => {
+  console.log("Connecting to MongoDB Atlas...");
+  await connect(MONGODB_URI);
+  console.log("✓ Connected");
 
-    // Get the model
-    const UserModel = model("User", UserSchema);
+  const UserModel = model("User", UserSchema);
 
-    // Hash passwords
-    const password = "password123";
-    for (const user of sampleUsers) {
-      user.passwordHash = await bcrypt.hash(password, 10);
-    }
+  for (const account of realAccounts) {
+    const passwordHash = await bcrypt.hash(account.password, 10);
 
-    // Clear existing data
-    console.log("Clearing existing users...");
-    await UserModel.deleteMany({});
+    await UserModel.findOneAndUpdate(
+      { email: account.email },
+      {
+        $set: {
+          email: account.email,
+          passwordHash,
+          role: account.role,
+          fullName: account.fullName,
+          phone: account.phone,
+          avatarUrl: null,
+          isActive: true,
+        },
+      },
+      { upsert: true, new: true }
+    );
 
-    // Insert sample users
-    console.log("Inserting sample users...");
-    const createdUsers = await UserModel.insertMany(sampleUsers);
-    console.log(`✓ Created ${createdUsers.length} users`);
-
-    // Print credentials
-    console.log("\n✅ Database seeded successfully!\n");
-    console.log("Test Credentials:");
-    console.log("================");
-    console.log("Customer 1: customer1@example.com / password123");
-    console.log("Customer 2: customer2@example.com / password123");
-    console.log("Cleaner 1:  cleaner1@example.com / password123");
-    console.log("Cleaner 2:  cleaner2@example.com / password123");
-    console.log("Admin:      admin@example.com / password123");
-
-    await disconnect();
-    process.exit(0);
-  } catch (error) {
-    console.error("❌ Error seeding database:", error);
-    process.exit(1);
+    console.log(`✓ Upserted [${account.role}] ${account.email}`);
   }
+
+  console.log("\n✅ Real accounts ready:\n");
+  console.log("Role      Email                     Password");
+  console.log("--------- ------------------------- ----------------------");
+  for (const a of realAccounts) {
+    console.log(`${a.role.padEnd(9)} ${a.email.padEnd(25)} ${a.password}`);
+  }
+
+  await disconnect();
+  process.exit(0);
 };
 
-seedDatabase();
+run().catch((err) => {
+  console.error("❌", err.message);
+  process.exit(1);
+});

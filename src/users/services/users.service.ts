@@ -15,6 +15,10 @@ export class UsersService {
     return this.userModel.findOne({ email: email.toLowerCase() }).exec();
   }
 
+  async findByPhone(phone: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ phone }).exec();
+  }
+
   async create(userData: Partial<User>): Promise<UserDocument> {
     return this.userModel.create(userData);
   }
