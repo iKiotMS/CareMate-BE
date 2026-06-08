@@ -1,33 +1,16 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from "@nestjs/common";
+import { Injectable, BadRequestException } from "@nestjs/common";
 import { OrdersService } from "../../orders/services/orders.service";
 import { CreateOrderDto, SubmitReviewDto } from "../../orders/dtos/order.dto";
-import { TasksService } from "../../tasks/services/tasks.service";
 
 @Injectable()
 export class CustomersService {
-  constructor(
-    private ordersService: OrdersService,
-    private tasksService: TasksService,
-  ) {}
+  constructor(private ordersService: OrdersService) {}
 
   async createOrder(
     customerId: string,
     createOrderDto: CreateOrderDto,
   ): Promise<any> {
-    const tasks = await this.tasksService.getTasksByIds(createOrderDto.taskIds);
-    if (tasks.length !== createOrderDto.taskIds.length) {
-      throw new BadRequestException("One or more tasks do not exist");
-    }
-
-    const taskMap = Object.fromEntries(
-      (tasks as any[]).map((task) => [task._id.toString(), task.name]),
-    );
-
-    return this.ordersService.createOrder(customerId, createOrderDto, taskMap);
+    return this.ordersService.createOrder(customerId, createOrderDto);
   }
 
   async getCustomerOrders(customerId: string, status?: string): Promise<any> {
@@ -59,10 +42,34 @@ export class CustomersService {
     orderId: string,
     reviewDto: SubmitReviewDto,
   ): Promise<any> {
-    const order = await this.ordersService.getOrderById(orderId);
-    if (order.customerId.toString() !== customerId) {
-      throw new BadRequestException("This order does not belong to you");
-    }
     return this.ordersService.submitReview(orderId, customerId, reviewDto);
+  }
+
+  async getCustomerDashboard(customerId: string): Promise<any> {
+    const orders = await this.ordersService.getCustomerOrders(customerId);
+    const total = orders.length;
+    const pending = orders.filter((o: any) => o.status === "PENDING").length;
+    const completed = orders.filter(
+      (o: any) => o.status === "COMPLETED",
+    ).length;
+    const inProgress = orders.filter((o: any) =>
+      ["ON_HOLD_PAYMENT", "CONFIRMED", "ACCEPTED", "IN_PROGRESS"].includes(
+        o.status,
+      ),
+    ).length;
+    const recentOrders = [...orders]
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+      .slice(0, 5);
+
+    return {
+      totalOrders: total,
+      pendingOrders: pending,
+      completedOrders: completed,
+      inProgressOrders: inProgress,
+      recentOrders,
+    };
   }
 }
