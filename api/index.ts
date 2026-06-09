@@ -26,11 +26,15 @@ async function bootstrap() {
 export default async (req: IncomingMessage, res: ServerResponse) => {
   if (!cachedHandler) cachedHandler = await bootstrap();
 
-  // Vercel pre-parses the body and sets req.body before calling this handler.
-  // Without this, Express body-parser re-reads the already-consumed stream and
-  // overwrites req.body with {}, so loginDto.phone arrives as undefined → 401.
   const r = req as any;
+
+  console.log(`[API] ${req.method} ${req.url}`);
+  console.log(`[API] Content-Type: ${req.headers['content-type']}`);
+  console.log(`[API] Body before parse:`, r.body ? "exists" : "undefined");
+
+  // Vercel pre-parses the body and sets req.body before calling this handler.
   if (r.body !== undefined) {
+    console.log(`[API] Body detected (Vercel pre-parsed):`, JSON.stringify(r.body).substring(0, 100));
     r._body = true;
   }
 
