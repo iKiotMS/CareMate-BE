@@ -60,6 +60,7 @@ export class TasksService {
       slug: createTaskDto.slug,
       description: createTaskDto.description ?? null,
       price: createTaskDto.price,
+      pricePerM2: createTaskDto.pricePerM2 ?? 10000,
       isActive: true,
       sortOrder: createTaskDto.sortOrder ?? 0,
     });
@@ -78,6 +79,7 @@ export class TasksService {
     if (updateTaskDto.description !== undefined)
       (task as any).description = updateTaskDto.description ?? null;
     if (updateTaskDto.price !== undefined) (task as any).price = updateTaskDto.price;
+    if (updateTaskDto.pricePerM2 !== undefined) (task as any).pricePerM2 = updateTaskDto.pricePerM2;
     if (updateTaskDto.isActive !== undefined) task.isActive = updateTaskDto.isActive;
     if (updateTaskDto.sortOrder !== undefined) task.sortOrder = updateTaskDto.sortOrder;
 
@@ -106,7 +108,7 @@ export class TasksService {
     return task.save();
   }
 
-  async calculateTotal(taskIds: string[]) {
+  async calculateTotal(taskIds: string[], areaM2: number) {
     const tasks = await this.taskCatalogModel.find({
       _id: { $in: taskIds.map((id) => new Types.ObjectId(id)) },
       isActive: true,
@@ -115,15 +117,24 @@ export class TasksService {
     if (tasks.length !== taskIds.length)
       throw new BadRequestException('One or more tasks are invalid or inactive');
 
-    const items = tasks.map((t: any) => ({
-      taskId: t._id.toString(),
-      taskName: t.name,
-      price: t.price ?? 0,
-    }));
+    const items = tasks.map((t: any) => {
+      const basePrice = t.price ?? 0;
+      const perM2 = t.pricePerM2 ?? 10000;
+      const areaFee = areaM2 * perM2;
+      return {
+        taskId: t._id.toString(),
+        taskName: t.name,
+        basePrice,
+        pricePerM2: perM2,
+        areaFee,
+        taskTotal: basePrice + areaFee,
+      };
+    });
 
     return {
       tasks: items,
-      totalAmount: items.reduce((sum, t) => sum + t.price, 0),
+      areaM2,
+      totalAmount: items.reduce((sum, t) => sum + t.taskTotal, 0),
       currency: 'VND',
     };
   }

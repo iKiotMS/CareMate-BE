@@ -3,6 +3,20 @@ import { Document } from "mongoose";
 
 export type UserDocument = User & Document;
 
+@Schema({ _id: true })
+export class UserAddress {
+  @Prop({ default: "" })
+  label!: string;
+
+  @Prop({ required: true })
+  address!: string;
+
+  @Prop({ default: false })
+  isDefault!: boolean;
+}
+
+export const UserAddressSchema = SchemaFactory.createForClass(UserAddress);
+
 @Schema({ timestamps: true })
 export class User {
   @Prop({ sparse: true, unique: true, lowercase: true })
@@ -22,6 +36,9 @@ export class User {
 
   @Prop({ type: String, default: null })
   avatarUrl?: string | null;
+
+  @Prop({ type: [UserAddressSchema], default: [] })
+  addresses!: UserAddress[];
 
   @Prop({ default: true })
   isActive!: boolean;

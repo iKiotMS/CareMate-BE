@@ -156,21 +156,26 @@ export class OrdersService {
         "One or more tasks are invalid or inactive",
       );
 
-    const tasks = (catalogItems as any[]).map((t) => ({
-      taskCatalogId: t._id,
-      taskName: t.name,
-      taskPrice: t.price ?? 0,
-      isDone: false,
-      completedAt: null,
-      photoBefore: null,
-      photoAfter: null,
-    }));
+    const areaM2 = createOrderDto.areaM2;
+    const tasks = (catalogItems as any[]).map((t) => {
+      const basePrice = t.price ?? 0;
+      const perM2 = t.pricePerM2 ?? 10000;
+      return {
+        taskCatalogId: t._id,
+        taskName: t.name,
+        taskPrice: basePrice + areaM2 * perM2,
+        isDone: false,
+        completedAt: null,
+        photoBefore: null,
+        photoAfter: null,
+      };
+    });
 
-    const totalAmount = 150_000; // For simplicity, fixed total amount. In real case, calculate based on selected tasks and any extras.
+    const totalAmount = tasks.reduce((sum, t) => sum + t.taskPrice, 0);
 
     if (totalAmount <= DEPOSIT_AMOUNT) {
       throw new BadRequestException(
-        `Tổng giá trị đơn (${totalAmount} ₫) phải lớn hơn tiền đặt cọc (${DEPOSIT_AMOUNT} ₫). Hãy chọn thêm dịch vụ.`,
+        `Tổng giá trị đơn (${totalAmount.toLocaleString("vi-VN")} ₫) phải lớn hơn tiền đặt cọc (${DEPOSIT_AMOUNT.toLocaleString("vi-VN")} ₫). Hãy chọn thêm dịch vụ hoặc nhập diện tích lớn hơn.`,
       );
     }
 
@@ -185,6 +190,7 @@ export class OrdersService {
       paymentMethod: "BANK_TRANSFER",
       paymentStatus: "UNPAID",
       totalAmount,
+      areaM2,
       tasks,
       applicants: [],
     });
@@ -813,7 +819,7 @@ export class OrdersService {
     await this.finalPaymentService.createFinalPayment(
       orderId,
       customerId,
-      150_000, // For simplicity, fixed final payment amount. In real case, calculate based on order total and deposit.
+      order.totalAmount - DEPOSIT_AMOUNT,
     );
 
     const notifications: Promise<void>[] = [];
@@ -836,7 +842,7 @@ export class OrdersService {
         recipientId: customerId,
         type: NotificationType.FINAL_PAYMENT_REQUIRED,
         title: "Vui lòng thanh toán phần còn lại",
-        body: `Còn lại ${order.totalAmount - 30000} ₫. Hoàn tất để kết thúc đơn.`,
+        body: `Còn lại ${(order.totalAmount - DEPOSIT_AMOUNT).toLocaleString("vi-VN")} ₫. Hoàn tất để kết thúc đơn.`,
         referenceId: orderId,
         referenceType: "order",
       }),
