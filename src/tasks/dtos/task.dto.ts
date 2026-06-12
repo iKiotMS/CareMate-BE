@@ -34,6 +34,12 @@ export class CreateTaskDto {
   price!: number;
 
   @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  pricePerM2?: number;
+
+  @IsOptional()
   @IsInt()
   @Min(0)
   @Type(() => Number)
@@ -59,6 +65,12 @@ export class UpdateTaskDto {
   price?: number;
 
   @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  pricePerM2?: number;
+
+  @IsOptional()
   @IsInt()
   @Min(0)
   @Type(() => Number)
@@ -74,4 +86,9 @@ export class CalculateOrderTotalDto {
   @ArrayMinSize(1)
   @IsMongoId({ each: true })
   taskIds!: string[];
+
+  @IsNumber()
+  @Min(1)
+  @Type(() => Number)
+  areaM2!: number;
 }
