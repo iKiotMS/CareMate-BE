@@ -40,7 +40,7 @@ export class TasksController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('customer', 'cleaner', 'admin')
   async calculateTotal(@Body() dto: CalculateOrderTotalDto) {
-    return this.tasksService.calculateTotal(dto.taskIds);
+    return this.tasksService.calculateTotal(dto.taskIds, dto.areaM2);
   }
 
   @Patch(':id')

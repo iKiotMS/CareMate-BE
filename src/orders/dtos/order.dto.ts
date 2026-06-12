@@ -12,6 +12,7 @@ import {
   Max,
   Matches,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export enum PaymentMethod {
   CASH = 'CASH',
@@ -41,6 +42,11 @@ export class CreateOrderDto {
   @ArrayMinSize(1)
   @IsMongoId({ each: true })
   taskIds!: string[];
+
+  @IsNumber()
+  @Min(1)
+  @Type(() => Number)
+  areaM2!: number;
 
   @IsOptional()
   @IsArray()

@@ -86,6 +86,9 @@ export class Order {
   @Prop({ type: [OrderTaskSchema], default: [] })
   tasks!: OrderTask[];
 
+  @Prop({ type: Number, required: true, default: 0 })
+  areaM2!: number;
+
   @Prop({ default: [] })
   photosBeforeBooking?: string[];
 

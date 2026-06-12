@@ -17,6 +17,9 @@ export class TaskCatalog {
   @Prop({ required: true, default: 0 })
   price!: number;
 
+  @Prop({ required: true, default: 10000 })
+  pricePerM2!: number;
+
   @Prop({ default: true })
   isActive!: boolean;
 
