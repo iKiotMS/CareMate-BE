@@ -15,7 +15,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: any) {
-    console.log(`[AUTH] Register attempt - phone: ${registerDto.phone}, email: ${registerDto.email}`);
+    console.log(`[AUTH] Register attempt - phone: ${registerDto.phone}`);
     const existingUser = await this.usersService.findByPhone(registerDto.phone);
     if (existingUser) {
       console.log(`[AUTH] Phone already exists: ${registerDto.phone}`);
@@ -27,7 +27,6 @@ export class AuthService {
 
     console.log(`[AUTH] Creating user: ${registerDto.fullName}`);
     const user = await this.usersService.create({
-      email: registerDto.email,
       passwordHash: hashedPassword,
       fullName: registerDto.fullName,
       phone: registerDto.phone,
@@ -43,7 +42,9 @@ export class AuthService {
     console.log(`[AUTH] Login attempt - phone: ${loginDto.phone}`);
 
     const user = await this.usersService.findByPhone(loginDto.phone);
-    console.log(`[AUTH] User lookup - found: ${!!user}, isActive: ${user?.isActive}`);
+    console.log(
+      `[AUTH] User lookup - found: ${!!user}, isActive: ${user?.isActive}`,
+    );
 
     if (!user || !user.isActive) {
       console.log(`[AUTH] Login failed - user not found or inactive`);
@@ -73,7 +74,9 @@ export class AuthService {
       { expiresIn: process.env.JWT_REFRESH_EXPIRATION || "7d" },
     );
 
-    console.log(`[AUTH] Login successful - user: ${user._id}, role: ${user.role}`);
+    console.log(
+      `[AUTH] Login successful - user: ${user._id}, role: ${user.role}`,
+    );
     return { accessToken, refreshToken, user };
   }
 

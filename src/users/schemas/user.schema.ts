@@ -19,7 +19,7 @@ export const UserAddressSchema = SchemaFactory.createForClass(UserAddress);
 
 @Schema({ timestamps: true })
 export class User {
-  @Prop({ sparse: true, unique: true, lowercase: true })
+  @Prop({ unique: true, sparse: true, lowercase: true })
   email?: string;
 
   @Prop({ required: true })
